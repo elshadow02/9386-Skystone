@@ -11,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.Teleop.EEHardware;
 
 @TeleOp (name="Drive Test")
-public class driveTest extends OpMode{
+public class DriveTest extends OpMode{
 
     private EEHardware robot = new EEHardware();
 
@@ -25,10 +25,6 @@ public class driveTest extends OpMode{
     @Override // @Override tells the computer we intend to override OpMode's method init()
     public void init() {
         robot.init(hardwareMap);
-
-        //robot.liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        //armController.setMaxIntegral(100); // CHECK THIS
 
         telemetry.addLine("Init Complete");
     }
