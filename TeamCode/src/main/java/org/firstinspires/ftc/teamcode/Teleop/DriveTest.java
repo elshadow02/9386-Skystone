@@ -42,6 +42,9 @@ public class DriveTest extends OpMode{
         //Assigns speedAngle as the difference between joystickAngle and angleChange.
         speedAngle = joystickAngle - angleChange;
 
+        //Gets the rotational value for our drive.
+        rotate = kR * gamepad1.right_stick_x;
+
         //Make sure that the absolute value of either the y- or x-value of the joystick is greater than 0.1.
         //Because speedAngle will never produce an angle where the sine and cosine of that angle equals 0,
         //we need to make sure that the robot does not move unless the joystick is pressed.
@@ -50,10 +53,8 @@ public class DriveTest extends OpMode{
             forward = Math.sin(speedAngle);
             strafe = Math.cos(speedAngle);
 
-            rotate = kR * gamepad1.right_stick_x;
-
-            frontLeftSpeed = forward + rotate + strafe;
             frontRightSpeed = forward - rotate - strafe;
+            frontLeftSpeed = forward + rotate + strafe;
             backLeftSpeed = forward + rotate - strafe;
             backRightSpeed = forward - rotate + strafe;
 
@@ -75,10 +76,10 @@ public class DriveTest extends OpMode{
             robot.backRight.setPower(backRightSpeed);
         }
         else{
-            robot.frontRight.setPower(0);
-            robot.frontLeft.setPower(0);
-            robot.backLeft.setPower(0);
-            robot.backRight.setPower(0);
+            robot.frontRight.setPower(-rotate);
+            robot.frontLeft.setPower(rotate);
+            robot.backLeft.setPower(rotate);
+            robot.backRight.setPower(-rotate);
         }
 
     }
