@@ -37,10 +37,14 @@ public class DriveTest extends OpMode{
         //Assigns joystickAngle as the angle made by the left joystick.
         joystickAngle = Math.atan2(-gamepad1.left_stick_y, gamepad1.left_stick_x);
 
+        joystickAngle = Math.toDegrees(joystickAngle);
+
         //Defines angleChange variable as the x-value received from the imu.
         angleChange = orientation.thirdAngle;
         //Assigns speedAngle as the difference between joystickAngle and angleChange.
         speedAngle = joystickAngle - angleChange;
+
+        speedAngle = Math.toRadians(speedAngle);
 
         //Gets the rotational value for our drive.
         rotate = kR * gamepad1.right_stick_x;
