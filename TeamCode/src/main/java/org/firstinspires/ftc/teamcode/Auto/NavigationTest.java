@@ -34,6 +34,8 @@ public class NavigationTest extends LinearOpMode {
                 stopButton = 1;
                 break;
             }
+
+            sleep(7000);
         }
     }
 }
