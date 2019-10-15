@@ -56,8 +56,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Motor channel:  Back left drive motor:   "backLeft"
  * Motor channel:  Back right drive motor:  "backRight"
  */
-public class EEHardware
-{
+public class EEHardware {
     /* Public OpMode members. */
     public BNO055IMU imu = null;
 
