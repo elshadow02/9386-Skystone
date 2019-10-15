@@ -3,6 +3,8 @@
  */
 package org.firstinspires.ftc.teamcode.Auto;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.teamcode.Auto.CoordinatePosition;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -13,6 +15,8 @@ import org.firstinspires.ftc.teamcode.Teleop.EEHardware;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREV;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
+
+
 
 import org.firstinspires.ftc.teamcode.Auto.SkystoneFPS;
 
@@ -45,7 +49,18 @@ public class NavigationPositions extends LinearOpMode
     float xPosition = 0;
     float yPosition = 0;
 
+    VuforiaLocalizer vuforia;
+
+    /**
+     * This is the webcam we are to use. As with other hardware devices such as motors and
+     * servos, this device is identified using the robot configuration tool in the FTC application.
+     */
+
     SampleMecanumDriveBase drive = new SampleMecanumDriveREVOptimized(hardwareMap);
+
+    WebcamName webcamName;
+
+    VuforiaLocalizer.Parameters parameters;
 
 
     /* Constructor */
@@ -69,6 +84,31 @@ public class NavigationPositions extends LinearOpMode
         blueFoundation.setXY(-mmFoundationXPosition, mmFoundationYPosition);
         redFoundation.setXY(mmFoundationXPosition, mmFoundationYPosition);
     }
+    public void VuforiaInit(){
+        /*
+         * Retrieve the camera we are to use.
+         */
+        webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        /*
+         * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
+         * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
+         */
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+
+        // OR...  Do Not Activate the Camera Monitor View, to save power
+        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = " -- YOUR NEW VUFORIA KEY GOES HERE  --- ";
+
+        /**
+         * We also indicate which camera on the RC we wish to use.
+         */
+        parameters.cameraName = webcamName;
+
+        fps.initialize(parameters);
+    }
 
     public void travelToPosition(double targetX, double targetY, double targetHeading){
         drive.followTrajectorySync(
@@ -87,7 +127,7 @@ public class NavigationPositions extends LinearOpMode
     }
 
     public void resetXYPositions(){
-        fps.initialize(5.0, this.xPosition, this.yPosition);
+        fps.vuMarkInit(5.0, this.xPosition, this.yPosition, parameters);
     }
 
     public double getCurrentXPosition(){

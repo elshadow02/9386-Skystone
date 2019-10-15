@@ -429,32 +429,7 @@ public class SkystoneFPS extends LinearOpMode {
 
     }
 
-    public void initialize(double maxTime, float xPosition, float yPosition) {
-        /*
-         * Retrieve the camera we are to use.
-         */
-        webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
-
-        /*
-         * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
-         * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
-         */
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
-
-        // OR...  Do Not Activate the Camera Monitor View, to save power
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-        parameters.vuforiaLicenseKey = " -- YOUR NEW VUFORIA KEY GOES HERE  --- ";
-
-        /**
-         * We also indicate which camera on the RC we wish to use.
-         */
-        parameters.cameraName = webcamName;
-
-        /**
-         * Instantiate the Vuforia engine
-         */
+    public void initialize(VuforiaLocalizer.Parameters parameters){
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         /**
@@ -465,7 +440,9 @@ public class SkystoneFPS extends LinearOpMode {
         vuforia.enableConvertFrameToBitmap();
 
         AppUtil.getInstance().ensureDirectoryExists(captureDirectory);
+    }
 
+    public void vuMarkInit(double maxTime, float xPosition, float yPosition, VuforiaLocalizer.Parameters parameters) {
 
         /*
         Define VuMarks.

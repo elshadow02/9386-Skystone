@@ -22,6 +22,8 @@ public class NavigationTest extends LinearOpMode {
 
         int stopButton = 0;
 
+        nav.VuforiaInit();
+
         waitForStart();
 
         while (opModeIsActive() && stopButton != 1) {
