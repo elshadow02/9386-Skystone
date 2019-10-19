@@ -85,11 +85,43 @@ public class SkystoneFPS extends LinearOpMode {
 
     VuforiaLocalizer vuforia;
 
+    final float mmPerInch = 25.4f;
+    final float mmBotWidth = 18 * mmPerInch;            // ... or whatever is right for your robot
+    final float mmFTCFieldWidth = (12 * 12 - 2) * mmPerInch;
+
+    final float mmStonePosition  = (-mmFTCFieldWidth/2) + (4*mmPerInch);
+    final float mmStoneLength    = 8 * mmPerInch;
+
+    float targetX = 0;
+    float targetY = 0;
+
+    final double WHEEL_RADIUS = 2 * 25.4;
+    final double ENCODER_TICKS = 537.6;
+
+    double TICKS_PER_INCH = 0;
+
+    CoordinatePosition blueSkystone1 = new CoordinatePosition();
+    CoordinatePosition blueSkystone2 = new CoordinatePosition();
+    CoordinatePosition blueSkystone3 = new CoordinatePosition();
+    CoordinatePosition blueSkystone4 = new CoordinatePosition();
+    CoordinatePosition blueSkystone5 = new CoordinatePosition();
+    CoordinatePosition blueSkystone6 = new CoordinatePosition();
+
+    CoordinatePosition redSkystone1 = new CoordinatePosition();
+    CoordinatePosition redSkystone2 = new CoordinatePosition();
+    CoordinatePosition redSkystone3 = new CoordinatePosition();
+    CoordinatePosition redSkystone4 = new CoordinatePosition();
+    CoordinatePosition redSkystone5 = new CoordinatePosition();
+    CoordinatePosition redSkystone6 = new CoordinatePosition();
+
     /**
      * This is the webcam we are to use. As with other hardware devices such as motors and
      * servos, this device is identified using the robot configuration tool in the FTC application.
      */
     WebcamName webcamName;
+    float currentX = 0, currentY = 0;
+    float yPosition = 0, xPosition = 0;
+    float xDifference = 0, yDifference = 0;
 
     @Override
     public void runOpMode() {
@@ -109,7 +141,7 @@ public class SkystoneFPS extends LinearOpMode {
         // OR...  Do Not Activate the Camera Monitor View, to save power
         // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-        parameters.vuforiaLicenseKey = " -- YOUR NEW VUFORIA KEY GOES HERE  --- ";
+        parameters.vuforiaLicenseKey = "AQapn2P/////AAABmRxgWZJT7kKXqyyOQcN4AidYCoBPE/BzcDQASgQ+5iM8wvdkBbzR8qPTDddZSHUp0VsvcAKm8KwIWUElQXmamu9q/iTAzYdJ+aFu/b+2Zyf/+9ZbluiqiSPLptgv/ocKQqzY6nCFoV4qzSFGhH45oRThSBuKmWxrAGJHIo1mnrRdSuyuIOf8JIqo9J9bdqApsVZOSEiuglT7YNQE3DEBAsS9xCLLu8lfn/SvpgzaEy+pBOoehvJOCQ6QabYUz2ZiaaB0CrOLkPjP7OnafVAoo+NZ6vOOqfwRfqEwWUT/YYOoTn8zJLD0+tBdqSZkdVn5sT46CxfZFz1NHfd5RvHzRBcPrI3iB6lXtvCuS8csqLL0";
 
         /**
          * We also indicate which camera on the RC we wish to use.
@@ -130,259 +162,32 @@ public class SkystoneFPS extends LinearOpMode {
 
         AppUtil.getInstance().ensureDirectoryExists(captureDirectory);
 
+        setTicksPerInch(WHEEL_RADIUS, ENCODER_TICKS);
 
-        /*
-        Define VuMarks.
-        Rear/Back is in the Building Zone.
-        Front is in the Loading Zone.
-         */
-        VuforiaTrackables skystone = vuforia.loadTrackablesFromAsset("Skystone");
-        VuforiaTrackable bridgeBlueBack = skystone.get(1);
-        bridgeBlueBack.setName("bridgeBlueBack");
+        setCoords();
 
-        VuforiaTrackable bridgeRedBack = skystone.get(2);
-        bridgeRedBack.setName("bridgeRedBack");
-
-        VuforiaTrackable bridgeRedFront = skystone.get(3);
-        bridgeRedBack.setName("bridgeRedFront");
-
-        VuforiaTrackable bridgeBlueFront = skystone.get(4);
-        bridgeRedBack.setName("bridgeBlueFront");
-
-        VuforiaTrackable RedPerimeterBack = skystone.get(5);
-        bridgeRedBack.setName("RedPerimeterBack");
-
-        VuforiaTrackable RedPerimeterFront = skystone.get(6);
-        bridgeRedBack.setName("RedPerimeterFront");
-
-        VuforiaTrackable FrontPerimeterRed = skystone.get(7);
-        bridgeRedBack.setName("FrontPerimeterRed");
-
-        VuforiaTrackable FrontPerimeterBlue = skystone.get(8);
-        bridgeRedBack.setName("FrontPerimeterBlue");
-
-        VuforiaTrackable BluePerimeterFront = skystone.get(9);
-        bridgeRedBack.setName("BluePerimeterFront");
-
-        VuforiaTrackable BluePerimeterBack = skystone.get(10);
-        bridgeRedBack.setName("BluePerimeterBack");
-
-        VuforiaTrackable RearPerimeterBlue = skystone.get(11);
-        bridgeRedBack.setName("RearPerimeterBlue");
-
-        VuforiaTrackable RearPerimeterRed = skystone.get(12);
-        bridgeRedBack.setName("RearPerimeterRed");
-
-        /** For convenience, gather together all the trackable objects in one easily-iterable collection */
-        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
-        allTrackables.addAll(skystone);
-
-        //Convert field measurements to mm because Skystone XML file data uses mm.
-        final float mmPerInch = 25.4f;
-        final float mmBotWidth = 18 * mmPerInch;            // ... or whatever is right for your robot
-        final float mmFTCFieldWidth = (12 * 12 - 2) * mmPerInch;   // the FTC field is ~11'10" (142") center-to-center of the glass panels
-        final float vumarkHeight = 5.75f * mmPerInch;
-        final float vumarkDistanceFromWallCenter = 35 * mmPerInch;
-        final float bridgeVumarkXDistanceFromOrigin = 24 * mmPerInch;
-        final float bridgeVumarkYDistanceFromOrigin = 9 * mmPerInch;
-
-        final float xOrigin = 0.0f;
-        final float yOrigin = 0.0f;
-        final float zOrigin = 0.0f;
-
-        final float X_MAX = mmFTCFieldWidth / 2;
-        final float Y_MAX = mmFTCFieldWidth / 2;
-        final float Z_MAX = mmFTCFieldWidth / 2;
-
-        final float X_MIN = -mmFTCFieldWidth / 2;
-        final float Y_MIN = -mmFTCFieldWidth / 2;
-        final float Z_MIN = 0.0f;
-
-
-        //Define Rear Perimeter Target 1 position on field.
-        OpenGLMatrix RearPerimeterBlueLocation = OpenGLMatrix
-                .translation(-vumarkDistanceFromWallCenter, -mmFTCFieldWidth / 2, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 180, 0));
-        RearPerimeterBlue.setLocationFtcFieldFromTarget(RearPerimeterBlueLocation);
-        RobotLog.ii(TAG, "Rear Perimeter Blue=%s", format(RearPerimeterBlueLocation));
-
-        //Define Rear Perimeter Target 2 position on field.
-        OpenGLMatrix RearPerimeterRedLocation = OpenGLMatrix
-                .translation(vumarkDistanceFromWallCenter, -mmFTCFieldWidth / 2, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 180, 0));
-        RearPerimeterRed.setLocationFtcFieldFromTarget(RearPerimeterRedLocation);
-        RobotLog.ii(TAG, "Rear Perimeter Red=%s", format(RearPerimeterRedLocation));
-
-        //Define Front Perimeter Target 2 position on field.
-        OpenGLMatrix FrontPerimeterBlueLocation = OpenGLMatrix
-                .translation(-vumarkDistanceFromWallCenter, mmFTCFieldWidth / 2, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 0, 0));
-        FrontPerimeterBlue.setLocationFtcFieldFromTarget(FrontPerimeterBlueLocation);
-        RobotLog.ii(TAG, "Front Perimeter Blue=%s", format(FrontPerimeterBlueLocation));
-
-        //Define Front Perimeter Target 1 position on field.
-        OpenGLMatrix FrontPerimeterRedLocation = OpenGLMatrix
-                .translation(vumarkDistanceFromWallCenter, mmFTCFieldWidth / 2, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 0, 0));
-        FrontPerimeterRed.setLocationFtcFieldFromTarget(FrontPerimeterRedLocation);
-        RobotLog.ii(TAG, "Front Perimeter Red=%s", format(FrontPerimeterRedLocation));
-
-        //Define Red Perimeter Target 1 position on field.
-        OpenGLMatrix RedPerimeterBackLocation = OpenGLMatrix
-                .translation(mmFTCFieldWidth / 2, -vumarkDistanceFromWallCenter, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
-        RedPerimeterBack.setLocationFtcFieldFromTarget(RedPerimeterBackLocation);
-        RobotLog.ii(TAG, "Red Perimeter Back=%s", format(RedPerimeterBackLocation));
-
-        //Define Red Perimeter Target 2 position on field.
-        OpenGLMatrix RedPerimeterFrontLocation = OpenGLMatrix
-                .translation(mmFTCFieldWidth / 2, vumarkDistanceFromWallCenter, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
-        RedPerimeterFront.setLocationFtcFieldFromTarget(RedPerimeterFrontLocation);
-        RobotLog.ii(TAG, "Red Perimeter Front=%s", format(RedPerimeterFrontLocation));
-
-        //Define Blue Perimeter Target 2 position on field.
-        OpenGLMatrix BluePerimeterBackLocation = OpenGLMatrix
-                .translation(-mmFTCFieldWidth / 2, -vumarkDistanceFromWallCenter, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
-        BluePerimeterBack.setLocationFtcFieldFromTarget(BluePerimeterBackLocation);
-        RobotLog.ii(TAG, "Blue Perimeter Back=%s", format(BluePerimeterBackLocation));
-
-        //Define Blue Perimeter Target 1 position on field.
-        OpenGLMatrix BluePerimeterFrontLocation = OpenGLMatrix
-                .translation(-mmFTCFieldWidth / 2, vumarkDistanceFromWallCenter, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
-        BluePerimeterFront.setLocationFtcFieldFromTarget(BluePerimeterFrontLocation);
-        RobotLog.ii(TAG, "Blue Perimeter Front=%s", format(BluePerimeterFrontLocation));
-
-        //Define Bridge Blue Back position on field.
-        OpenGLMatrix BridgeBlueBackLocation = OpenGLMatrix
-                .translation(-bridgeVumarkXDistanceFromOrigin, -bridgeVumarkYDistanceFromOrigin, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 0, 0));
-        bridgeBlueBack.setLocationFtcFieldFromTarget(BridgeBlueBackLocation);
-        RobotLog.ii(TAG, "Bridge Blue Back=%s", format(BridgeBlueBackLocation));
-
-        //Define Red Bridge Back position on field.
-        OpenGLMatrix BridgeRedBackLocation = OpenGLMatrix
-                .translation(bridgeVumarkXDistanceFromOrigin, -bridgeVumarkYDistanceFromOrigin, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 0, 0));
-        bridgeRedBack.setLocationFtcFieldFromTarget(BridgeRedBackLocation);
-        RobotLog.ii(TAG, "Red Bridge Back=%s", format(BridgeRedBackLocation));
-
-        //Define Bridge Blue Front position on field.
-        OpenGLMatrix BridgeBlueFrontLocation = OpenGLMatrix
-                .translation(-bridgeVumarkXDistanceFromOrigin, bridgeVumarkYDistanceFromOrigin, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 180, 0));
-        bridgeBlueFront.setLocationFtcFieldFromTarget(BridgeBlueFrontLocation);
-        RobotLog.ii(TAG, "Blue Bridge Front=%s", format(BridgeBlueFrontLocation));
-
-        //Define Red Bridge Front position on field.
-        OpenGLMatrix BridgeRedFrontLocation = OpenGLMatrix
-                .translation(bridgeVumarkXDistanceFromOrigin, bridgeVumarkYDistanceFromOrigin, vumarkHeight)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 180, 0));
-        bridgeRedFront.setLocationFtcFieldFromTarget(BridgeRedFrontLocation);
-        RobotLog.ii(TAG, "Red Bridge Front=%s", format(BridgeRedFrontLocation));
-
-
-        // Define position of camera in relation to the robot.
-        OpenGLMatrix robotFromCamera = OpenGLMatrix
-                .translation(mmBotWidth / 2, 0, 0)
-                .multiplied(Orientation.getRotationMatrix(
-                        AxesReference.EXTRINSIC, AxesOrder.XZY,
-                        AngleUnit.DEGREES, 90, 90, 0));
-        RobotLog.ii(TAG, "camera=%s", format(robotFromCamera));
-
-        /**
-         * Let the trackable listeners we care about know where the camera is. We know that each
-         * listener is a {@link VuforiaTrackableDefaultListener} and can so safely cast because
-         * we have not ourselves installed a listener of a different type.
-         */
-        ((VuforiaTrackableDefaultListener) RearPerimeterBlue.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) RearPerimeterRed.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) FrontPerimeterBlue.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) FrontPerimeterRed.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) BluePerimeterBack.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) BluePerimeterFront.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) RedPerimeterBack.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) RedPerimeterFront.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) bridgeBlueBack.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) bridgeBlueFront.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) bridgeRedBack.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-        ((VuforiaTrackableDefaultListener) bridgeRedFront.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
-
-        /** Wait for the game to begin */
         telemetry.addData(">", "Press Play to start tracking");
         telemetry.update();
         waitForStart();
 
-        /** Start tracking the data sets we care about. */
-        skystone.activate();
+        vuMarkInit(5.0, currentX, currentY, parameters);
 
-        boolean buttonPressed = false;
-        while (opModeIsActive()) {
+        int fieldPos = getFieldStartPosition();
 
-            if (gamepad1.a && !buttonPressed) {
-                captureFrameToFile();
-            }
-            buttonPressed = gamepad1.a;
+        telemetry.addData("Current X: ", currentX);
+        telemetry.addData("Current Y: ", currentY);
+        telemetry.addData(" Field Positon", fieldPos);
+        telemetry.update();
 
-            for (VuforiaTrackable trackable : allTrackables) {
-                /**
-                 * getUpdatedRobotLocation() will return null if no new information is available since
-                 * the last time that call was made, or if the trackable is not currently visible.
-                 * getRobotLocation() will return null if the trackable is not currently visible.
-                 */
+        sleep (7000);
 
-                telemetry.addData(trackable.getName(), ((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible() ? "Visible" : "Not Visible");    //
+        findSkystone(parameters);
 
-                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
-                if (robotLocationTransform != null) {
-                    lastLocation = robotLocationTransform;
-                }
-            }
+        CoordinatePosition target = determineSkystone();
 
-            float robotXTranslation = lastLocation.getTranslation().get(0);
-            float robotYTranslation = lastLocation.getTranslation().get(1);
+        telemetry.addData("Target: ", target);
 
-            /**
-             * Provide feedback as to where the robot was last located (if we know).
-             */
-            if (lastLocation != null) {
-                //  RobotLog.vv(TAG, "robot=%s", format(lastLocation));
-                telemetry.addData("Pos", format(lastLocation));
-                telemetry.addData(" ", "");
-                telemetry.addData("X-Value: ", robotXTranslation);
-                telemetry.addData(" ", "");
-                telemetry.addData("Y-Value: ", robotYTranslation);
-            } else {
-                telemetry.addData("Pos", "Unknown");
-            }
-            telemetry.update();
-        }
+        sleep (5000);
     }
 
     /**
@@ -422,6 +227,33 @@ public class SkystoneFPS extends LinearOpMode {
                 }
             }
         }));
+    }
+
+    public void setCoords(){
+        blueSkystone1.setXY(24*mmPerInch, mmStonePosition);
+        blueSkystone2.setXY(24*mmPerInch, mmStonePosition + mmStoneLength);
+        blueSkystone3.setXY(24*mmPerInch, mmStonePosition + (2*mmStoneLength));
+        blueSkystone4.setXY(24*mmPerInch, mmStonePosition + (3*mmStoneLength));
+        blueSkystone5.setXY(24*mmPerInch, mmStonePosition + (4*mmStoneLength));
+        blueSkystone6.setXY(24*mmPerInch, mmStonePosition + (5*mmStoneLength));
+
+        redSkystone1.setXY(-24*mmPerInch, mmStonePosition);
+        redSkystone2.setXY(-24*mmPerInch, mmStonePosition + mmStoneLength);
+        redSkystone3.setXY(-24*mmPerInch, mmStonePosition + (2*mmStoneLength));
+        redSkystone4.setXY(-24*mmPerInch, mmStonePosition + (3*mmStoneLength));
+        redSkystone5.setXY(-24*mmPerInch, mmStonePosition + (4*mmStoneLength));
+        redSkystone6.setXY(-24*mmPerInch, mmStonePosition + (5*mmStoneLength));
+    }
+
+    public void travelToPosition(CoordinatePosition pos){
+        targetX = pos.getXCoordinate() - currentX;
+        targetY = pos.getYCoordinate() - currentY;
+
+        telemetry.addData("Target X: ", targetX);
+        telemetry.addData("Target Y: ", targetX);
+        telemetry.update();
+
+        //TODO: Add drive function using targetX and targetY.
     }
 
     //Constructor
@@ -491,9 +323,7 @@ public class SkystoneFPS extends LinearOpMode {
         allTrackables.addAll(skystone);
 
         //Convert field measurements to mm because Skystone XML file data uses mm.
-        final float mmPerInch = 25.4f;
-        final float mmBotWidth = 18 * mmPerInch;            // ... or whatever is right for your robot
-        final float mmFTCFieldWidth = (12 * 12 - 2) * mmPerInch;   // the FTC field is ~11'10" (142") center-to-center of the glass panels
+        // the FTC field is ~11'10" (142") center-to-center of the glass panels
         final float vumarkHeight = 5.75f * mmPerInch;
         final float vumarkDistanceFromWallCenter = 35 * mmPerInch;
         final float bridgeVumarkXDistanceFromOrigin = 24 * mmPerInch;
@@ -550,7 +380,7 @@ public class SkystoneFPS extends LinearOpMode {
 
         //Define Red Perimeter Target 1 position on field.
         OpenGLMatrix RedPerimeterBackLocation = OpenGLMatrix
-                .translation(mmFTCFieldWidth / 2, -vumarkDistanceFromWallCenter, vumarkHeight)
+                .translation(mmFTCFieldWidth / 2, vumarkDistanceFromWallCenter, vumarkHeight)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
                         AngleUnit.DEGREES, 90, -90, 0));
@@ -559,7 +389,7 @@ public class SkystoneFPS extends LinearOpMode {
 
         //Define Red Perimeter Target 2 position on field.
         OpenGLMatrix RedPerimeterFrontLocation = OpenGLMatrix
-                .translation(mmFTCFieldWidth / 2, vumarkDistanceFromWallCenter, vumarkHeight)
+                .translation(mmFTCFieldWidth / 2, -vumarkDistanceFromWallCenter, vumarkHeight)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
                         AngleUnit.DEGREES, 90, -90, 0));
@@ -571,7 +401,7 @@ public class SkystoneFPS extends LinearOpMode {
                 .translation(-mmFTCFieldWidth / 2, -vumarkDistanceFromWallCenter, vumarkHeight)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
+                        AngleUnit.DEGREES, 90, 90, 0));
         BluePerimeterBack.setLocationFtcFieldFromTarget(BluePerimeterBackLocation);
         RobotLog.ii(TAG, "Blue Perimeter Back=%s", format(BluePerimeterBackLocation));
 
@@ -580,7 +410,7 @@ public class SkystoneFPS extends LinearOpMode {
                 .translation(-mmFTCFieldWidth / 2, vumarkDistanceFromWallCenter, vumarkHeight)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, -90, 0));
+                        AngleUnit.DEGREES, 90, 90, 0));
         BluePerimeterFront.setLocationFtcFieldFromTarget(BluePerimeterFrontLocation);
         RobotLog.ii(TAG, "Blue Perimeter Front=%s", format(BluePerimeterFrontLocation));
 
@@ -647,25 +477,20 @@ public class SkystoneFPS extends LinearOpMode {
         ((VuforiaTrackableDefaultListener) bridgeRedBack.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
         ((VuforiaTrackableDefaultListener) bridgeRedFront.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
 
-        /** Wait for the game to begin */
-        telemetry.addData(">", "Press Play to start tracking");
-        telemetry.update();
-        waitForStart();
-
         /** Start tracking the data sets we care about. */
         skystone.activate();
 
-        float robotXTranslation = 0;
-        float robotYTranslation = 0;
+//        MatrixF robotXTranslation;
+//        MatrixF robotYTranslation;
 
         boolean buttonPressed = false;
         double startTime = time;
         while ((time - startTime) < maxTime) {
 
-            if (gamepad1.a && !buttonPressed) {
+            if (buttonPressed == true) {
                 captureFrameToFile();
+                buttonPressed = false;
             }
-            buttonPressed = gamepad1.a;
 
             for (VuforiaTrackable trackable : allTrackables) {
                 /**
@@ -682,8 +507,8 @@ public class SkystoneFPS extends LinearOpMode {
                 }
             }
 
-            robotXTranslation = lastLocation.getTranslation().get(0);
-            robotYTranslation = lastLocation.getTranslation().get(1);
+//            robotXTranslation = lastLocation.getTranslation().get(0);
+//            robotYTranslation = lastLocation.getTranslation().get(1);
 
             /**
              * Provide feedback as to where the robot was last located (if we know).
@@ -692,17 +517,220 @@ public class SkystoneFPS extends LinearOpMode {
                 //  RobotLog.vv(TAG, "robot=%s", format(lastLocation));
                 telemetry.addData("Pos", format(lastLocation));
                 telemetry.addData(" ", "");
-                telemetry.addData("X-Value: ", robotXTranslation);
+                telemetry.addData("X-Value: ", lastLocation.getTranslation().get(0));
                 telemetry.addData(" ", "");
-                telemetry.addData("Y-Value: ", robotYTranslation);
+                telemetry.addData("Y-Value: ", lastLocation.getTranslation().get(1));
             } else {
                 telemetry.addData("Pos", "Unknown");
             }
             telemetry.update();
         }
 
-        xPosition = robotXTranslation;
-        yPosition = robotYTranslation;
+        currentX = lastLocation.getTranslation().get(0);
+        currentY = lastLocation.getTranslation().get(1);
+
+        skystone.deactivate();
     }
+
+    public void findSkystone(VuforiaLocalizer.Parameters parameters){
+        VuforiaTrackables skystones = vuforia.loadTrackablesFromAsset("Skystone");
+        VuforiaTrackable skystone = skystones.get(0);
+        skystone.setName("skystone");
+
+        /** For convenience, gather together all the trackable objects in one easily-iterable collection */
+        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+        allTrackables.addAll(skystones);
+
+        boolean blue = false;
+        int side = 2;
+
+        if (side == 2 || side == 3){
+            blue = true;
+        }
+
+        if (blue == true) {
+            OpenGLMatrix skystoneLocation = OpenGLMatrix
+                    .translation(0, 0, 4 * mmPerInch)
+                    .multiplied(Orientation.getRotationMatrix(
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, -90, 0));
+            skystone.setLocationFtcFieldFromTarget(skystoneLocation);
+            RobotLog.ii(TAG, "Skystone=%s", format(skystoneLocation));
+        }
+        else{
+            OpenGLMatrix skystoneLocation = OpenGLMatrix
+                    .translation(0, 0, 4 * mmPerInch)
+                    .multiplied(Orientation.getRotationMatrix(
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, 90, 0));
+            skystone.setLocationFtcFieldFromTarget(skystoneLocation);
+            RobotLog.ii(TAG, "Skystone=%s", format(skystoneLocation));
+        }
+
+        // Define position of camera in relation to the robot.
+        OpenGLMatrix robotFromCamera = OpenGLMatrix
+                .translation(mmBotWidth / 2, 0, 0)
+                .multiplied(Orientation.getRotationMatrix(
+                        AxesReference.EXTRINSIC, AxesOrder.XZY,
+                        AngleUnit.DEGREES, 90, 90, 0));
+        RobotLog.ii(TAG, "camera=%s", format(robotFromCamera));
+
+        ((VuforiaTrackableDefaultListener) skystone.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
+
+        /** Start tracking the data sets we care about. */
+        skystones.activate();
+
+//        MatrixF robotXTranslation;
+//        MatrixF robotYTranslation;
+
+        boolean buttonPressed = false;
+        double startTime = time;
+        while ((time - startTime) < 10.0) {
+
+            if (buttonPressed == false) {
+                captureFrameToFile();
+                buttonPressed = true;
+            }
+
+            for (VuforiaTrackable trackable : allTrackables) {
+                /**
+                 * getUpdatedRobotLocation() will return null if no new information is available since
+                 * the last time that call was made, or if the trackable is not currently visible.
+                 * getRobotLocation() will return null if the trackable is not currently visible.
+                 */
+
+                telemetry.addData(trackable.getName(), ((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible() ? "Visible" : "Not Visible");    //
+
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
+                }
+            }
+
+            /**
+             * Provide feedback as to where the robot was last located (if we know).
+             */
+            if (lastLocation != null) {
+                //  RobotLog.vv(TAG, "robot=%s", format(lastLocation));
+                telemetry.addData("Pos", format(lastLocation));
+                telemetry.addData(" ", "");
+                telemetry.addData("X-Value: ", lastLocation.getTranslation().get(0));
+                telemetry.addData(" ", "");
+                telemetry.addData("Y-Value: ", lastLocation.getTranslation().get(1));
+            } else {
+                telemetry.addData("Pos", "Unknown");
+            }
+            telemetry.update();
+        }
+
+        xDifference = lastLocation.getTranslation().get(0);
+        yDifference = lastLocation.getTranslation().get(1);
+
+        xPosition = currentX - xDifference;
+        yPosition = Math.abs(currentY - yDifference) * -1;
+
+        telemetry.addData("X Diference: ", xDifference);
+        telemetry.addData("Y Diference: ", yDifference);
+        telemetry.addData("X Position : ", xPosition);
+        telemetry.addData("Y Position : ", yPosition);
+        telemetry.update();
+        skystones.deactivate();
+
+        sleep(7000);
+    }
+
+    public void setTicksPerInch(double wheelRadius, double encoderTicks){
+        double numerator = Math.PI * 2 * wheelRadius;
+        double answer = numerator/encoderTicks;
+
+        TICKS_PER_INCH = answer;
+    }
+
+    public int getFieldStartPosition(){
+        int quadrant = 0;
+
+        if (currentX > 0 && currentY > 0){
+            quadrant = 1;
+            return quadrant;
+        }
+        else if (currentX < 0 && currentY > 0){
+            quadrant = 2;
+            return quadrant;
+        }
+        else if (currentX < 0 && currentY < 0){
+            quadrant = 3;
+            return quadrant;
+        }
+        else if (currentX > 0 && currentY < 0){
+            quadrant = 4;
+            return quadrant;
+        }
+        else{
+            return quadrant;
+        }
+    }
+
+    public CoordinatePosition determineSkystone(){
+        if (xPosition <= 659.6 && xPosition >= 559.6){
+            if (yPosition > -mmFTCFieldWidth/2 && yPosition < -1651.8){
+                return redSkystone1;
+            }
+            else if (yPosition > -1651.8 && yPosition < -1550.2){
+                return redSkystone2;
+            }
+            else if (yPosition > -1550.2 && yPosition < -1448.6){
+                return redSkystone3;
+            }
+            else if (yPosition > -1448.6 && yPosition < -1347.0){
+                return redSkystone4;
+            }
+            else if (yPosition > -1347.0 && yPosition < -1245.4){
+                return redSkystone5;
+            }
+            else if (yPosition > -1245.4 && yPosition < -1143.8){
+                return redSkystone6;
+            }
+            else{
+                telemetry.addData("Falied on positive x", " and apparently a bad y");
+                telemetry.update();
+
+                return redSkystone1;
+            }
+        }
+        else if(xPosition >= -659.6 && xPosition <= -559.6){
+            if (yPosition > -mmFTCFieldWidth/2 && yPosition < -1651.8){
+                return blueSkystone1;
+            }
+            else if (yPosition > -1651.8 && yPosition < -1550.2){
+                return blueSkystone2;
+            }
+            else if (yPosition > -1550.2 && yPosition < -1448.6){
+                return blueSkystone3;
+            }
+            else if (yPosition > -1448.6 && yPosition < -1347.0){
+                return blueSkystone4;
+            }
+            else if (yPosition > -1347.0 && yPosition < -1245.4){
+                return blueSkystone5;
+            }
+            else if (yPosition > -1245.4 && yPosition < -1143.8){
+                return blueSkystone6;
+            }
+            else{
+                telemetry.addData("Falied on negative x", " and apparently a bad y");
+                telemetry.update();
+
+                return blueSkystone1;
+            }
+        }
+        else{
+            telemetry.addData("Failed! ", "I repeat, failed!");
+            telemetry.update();
+
+            return blueSkystone1;
+        }
+    }
+
+
 
 }

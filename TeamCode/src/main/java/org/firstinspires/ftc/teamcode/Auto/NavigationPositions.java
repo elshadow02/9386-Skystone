@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Auto.CoordinatePosition;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Teleop.EEHardware;
@@ -25,6 +26,7 @@ import org.firstinspires.ftc.teamcode.Auto.SkystoneFPS;
  *
  * Made by Ethan. Skystone 2019-20 Season
  */
+@TeleOp(name="nav pos", group="TeleOp")
 public class NavigationPositions extends LinearOpMode
 {
     public CoordinatePosition skystone1 = new CoordinatePosition();
@@ -56,7 +58,7 @@ public class NavigationPositions extends LinearOpMode
      * servos, this device is identified using the robot configuration tool in the FTC application.
      */
 
-    SampleMecanumDriveBase drive = new SampleMecanumDriveREVOptimized(hardwareMap);
+    //SampleMecanumDriveBase drive = new SampleMecanumDriveREVOptimized(hardwareMap);
 
     WebcamName webcamName;
 
@@ -70,7 +72,39 @@ public class NavigationPositions extends LinearOpMode
 
     @Override
     public void runOpMode() throws InterruptedException {
+        /*
+         * Retrieve the camera we are to use.
+         */
+        webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
+
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = "AQapn2P/////AAABmRxgWZJT7kKXqyyOQcN4AidYCoBPE/BzcDQASgQ+5iM8wvdkBbzR8qPTDddZSHUp0VsvcAKm8KwIWUElQXmamu9q/iTAzYdJ+aFu/b+2Zyf/+9ZbluiqiSPLptgv/ocKQqzY6nCFoV4qzSFGhH45oRThSBuKmWxrAGJHIo1mnrRdSuyuIOf8JIqo9J9bdqApsVZOSEiuglT7YNQE3DEBAsS9xCLLu8lfn/SvpgzaEy+pBOoehvJOCQ6QabYUz2ZiaaB0CrOLkPjP7OnafVAoo+NZ6vOOqfwRfqEwWUT/YYOoTn8zJLD0+tBdqSZkdVn5sT46CxfZFz1NHfd5RvHzRBcPrI3iB6lXtvCuS8csqLL0";
+
+        /**
+         * We also indicate which camera on the RC we wish to use.
+         */
+        parameters.cameraName = webcamName;
+
+        fps.initialize(parameters);
+
+        int stopButton = 0;
+
+        waitForStart();
+
+        while (opModeIsActive() && stopButton != 1) {
+            resetXYPositions();
+
+            telemetryUpdate();
+
+            if (gamepad1.a){
+                stopButton = 1;
+                break;
+            }
+
+            sleep(7000);
+        }
     }
 
     public void initialize(){
@@ -90,17 +124,10 @@ public class NavigationPositions extends LinearOpMode
          */
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
-        /*
-         * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
-         * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
-         */
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
-        // OR...  Do Not Activate the Camera Monitor View, to save power
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-        parameters.vuforiaLicenseKey = " -- YOUR NEW VUFORIA KEY GOES HERE  --- ";
+        parameters.vuforiaLicenseKey = "AQapn2P/////AAABmRxgWZJT7kKXqyyOQcN4AidYCoBPE/BzcDQASgQ+5iM8wvdkBbzR8qPTDddZSHUp0VsvcAKm8KwIWUElQXmamu9q/iTAzYdJ+aFu/b+2Zyf/+9ZbluiqiSPLptgv/ocKQqzY6nCFoV4qzSFGhH45oRThSBuKmWxrAGJHIo1mnrRdSuyuIOf8JIqo9J9bdqApsVZOSEiuglT7YNQE3DEBAsS9xCLLu8lfn/SvpgzaEy+pBOoehvJOCQ6QabYUz2ZiaaB0CrOLkPjP7OnafVAoo+NZ6vOOqfwRfqEwWUT/YYOoTn8zJLD0+tBdqSZkdVn5sT46CxfZFz1NHfd5RvHzRBcPrI3iB6lXtvCuS8csqLL0";
 
         /**
          * We also indicate which camera on the RC we wish to use.
@@ -110,21 +137,21 @@ public class NavigationPositions extends LinearOpMode
         fps.initialize(parameters);
     }
 
-    public void travelToPosition(double targetX, double targetY, double targetHeading){
-        drive.followTrajectorySync(
-                drive.trajectoryBuilder()
-                        .splineTo(new Pose2d(targetX - getCurrentXPosition(), targetY - getCurrentYPosition(), targetHeading))
-                        .build()
-        );
-    }
+//    public void travelToPosition(double targetX, double targetY, double targetHeading){
+//        drive.followTrajectorySync(
+//                drive.trajectoryBuilder()
+//                        .splineTo(new Pose2d(targetX - getCurrentXPosition(), targetY - getCurrentYPosition(), targetHeading))
+//                        .build()
+//        );
+//    }
 
-    public void travelToObject (CoordinatePosition object, double targetHeading){
-        drive.followTrajectorySync(
-                drive.trajectoryBuilder()
-                        .splineTo(new Pose2d(object.XCoordinate - getCurrentXPosition(), object.YCoordinate - getCurrentYPosition(), targetHeading))
-                        .build()
-        );
-    }
+//    public void travelToObject (CoordinatePosition object, double targetHeading){
+//        drive.followTrajectorySync(
+//                drive.trajectoryBuilder()
+//                        .splineTo(new Pose2d(object.XCoordinate - getCurrentXPosition(), object.YCoordinate - getCurrentYPosition(), targetHeading))
+//                        .build()
+//        );
+//    }
 
     public void resetXYPositions(){
         fps.vuMarkInit(5.0, this.xPosition, this.yPosition, parameters);

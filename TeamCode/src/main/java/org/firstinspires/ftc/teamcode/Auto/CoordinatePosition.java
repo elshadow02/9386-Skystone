@@ -10,45 +10,45 @@ package org.firstinspires.ftc.teamcode.Auto;
  */
 public class CoordinatePosition
 {
-    public double XCoordinate, YCoordinate, ZCoordinate;
+    public float XCoordinate, YCoordinate, ZCoordinate;
 
     /* Constructor */
     public CoordinatePosition(){
 
     }
 
-    public void setXCoordinate(double XCoordinate) {
+    public void setXCoordinate(float XCoordinate) {
         this.XCoordinate = XCoordinate;
     }
 
-    public void setYCoordinate(double YCoordinate) {
+    public void setYCoordinate(float YCoordinate) {
         this.YCoordinate = YCoordinate;
     }
 
-    public void setZCoordinate(double ZCoordinate) {
+    public void setZCoordinate(float ZCoordinate) {
         this.ZCoordinate = ZCoordinate;
     }
 
-    public void setXYZ(double XCoordinate, double YCoordinate, double ZCoordinate){
+    public void setXYZ(float XCoordinate, float YCoordinate, float ZCoordinate){
         this.XCoordinate = XCoordinate;
         this.YCoordinate = YCoordinate;
         this.ZCoordinate = ZCoordinate;
     }
 
-    public void setXY(double XCoordinate, double YCoordinate){
+    public void setXY(float XCoordinate, float YCoordinate){
         this.XCoordinate = XCoordinate;
         this.YCoordinate = YCoordinate;
     }
 
-    public double getXCoordinate(){
+    public float getXCoordinate(){
         return this.XCoordinate;
     }
 
-    public double getYCoordinate(){
+    public float getYCoordinate(){
         return this.YCoordinate;
     }
 
-    public double getZCoordinate(){
+    public float getZCoordinate(){
         return this.ZCoordinate;
     }
 }
