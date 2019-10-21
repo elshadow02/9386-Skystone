@@ -31,6 +31,9 @@ package org.firstinspires.ftc.teamcode.Auto;
 
 import android.graphics.Bitmap;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -54,6 +57,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
+import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
+import org.firstinspires.ftc.teamcode.util.LynxOptimizedI2cFactory;
+import org.openftc.revextensions2.ExpansionHubEx;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -74,6 +81,8 @@ public class SkystoneFPS extends LinearOpMode {
 
     public static final String TAG = "Vuforia Navigation Sample";
 
+    SampleMecanumDriveBase drive = new SampleMecanumDriveREVOptimized(hardwareMap);
+
     OpenGLMatrix lastLocation = null;
 
     /**
@@ -91,6 +100,11 @@ public class SkystoneFPS extends LinearOpMode {
 
     final float mmStonePosition  = (-mmFTCFieldWidth/2) + (4*mmPerInch);
     final float mmStoneLength    = 8 * mmPerInch;
+
+    final float mmFoundationXPosition = 23.75f * mmPerInch;
+    final float mmFoundationYPosition = mmFTCFieldWidth/4;
+    final float mmFoundation2XPosition = (23.75f * mmPerInch) + (234.95f);
+    final float mmFoundation2YPosition = (mmFTCFieldWidth/2) - 977.9f;
 
     float targetX = 0;
     float targetY = 0;
@@ -113,6 +127,17 @@ public class SkystoneFPS extends LinearOpMode {
     CoordinatePosition redSkystone4 = new CoordinatePosition();
     CoordinatePosition redSkystone5 = new CoordinatePosition();
     CoordinatePosition redSkystone6 = new CoordinatePosition();
+
+    CoordinatePosition targetSkystone1 = new CoordinatePosition();
+    CoordinatePosition targetSkystone2 = new CoordinatePosition();
+
+    CoordinatePosition blueFoundation = new CoordinatePosition();
+    CoordinatePosition redFoundation = new CoordinatePosition();
+    CoordinatePosition blueFoundation2 = new CoordinatePosition();
+    CoordinatePosition redFoundation2 = new CoordinatePosition();
+
+    private BNO055IMU imu;
+    private ExpansionHubEx hub;
 
     /**
      * This is the webcam we are to use. As with other hardware devices such as motors and
@@ -166,6 +191,13 @@ public class SkystoneFPS extends LinearOpMode {
 
         setCoords();
 
+        hub = hardwareMap.get(ExpansionHubEx .class, "hub");
+
+        imu = LynxOptimizedI2cFactory.createLynxEmbeddedImu(hub.getStandardModule(), 0);
+        BNO055IMU.Parameters iMUParameters = new BNO055IMU.Parameters();
+        iMUParameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        imu.initialize(iMUParameters);
+
         telemetry.addData(">", "Press Play to start tracking");
         telemetry.update();
         waitForStart();
@@ -174,20 +206,42 @@ public class SkystoneFPS extends LinearOpMode {
 
         int fieldPos = getFieldStartPosition();
 
+        Orientation startingOrientation = imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
+
+        drive.setPoseEstimate(new Pose2d(currentX, currentY, startingOrientation.thirdAngle));
+
         telemetry.addData("Current X: ", currentX);
         telemetry.addData("Current Y: ", currentY);
-        telemetry.addData(" Field Positon", fieldPos);
+        telemetry.addData("Field Positon", fieldPos);
         telemetry.update();
 
         sleep (7000);
 
-        findSkystone(parameters);
+        if (fieldPos == 1){
+            redBuildingZone(parameters);
+        }
+        else if (fieldPos == 2){
+            blueBuildingZone(parameters);
+        }
+        else if (fieldPos == 3){
+            blueLoadingZone(parameters);
+        }
+        else if (fieldPos == 4){
+            redLoadingZone(parameters);
+        }
+        else{
+            telemetry.addLine("Something went terribly, terribly wrong...");
+            telemetry.update();
+        }
 
-        CoordinatePosition target = determineSkystone();
-
-        telemetry.addData("Target: ", target);
-
-        sleep (5000);
+//        findSkystone(parameters);
+//
+//        CoordinatePosition target = determineSkystone();
+//
+//        telemetry.addData("Target: ", target);
+//        telemetry.update();
+//
+//        sleep (5000);
     }
 
     /**
@@ -243,17 +297,82 @@ public class SkystoneFPS extends LinearOpMode {
         redSkystone4.setXY(-24*mmPerInch, mmStonePosition + (3*mmStoneLength));
         redSkystone5.setXY(-24*mmPerInch, mmStonePosition + (4*mmStoneLength));
         redSkystone6.setXY(-24*mmPerInch, mmStonePosition + (5*mmStoneLength));
+
+        blueFoundation.setXY(-mmFoundationXPosition, mmFoundationYPosition);
+        redFoundation.setXY(mmFoundationXPosition, mmFoundationYPosition);
+        blueFoundation2.setXY(-mmFoundation2XPosition, mmFoundation2YPosition);
+        redFoundation2.setXY(mmFoundation2XPosition, mmFoundation2YPosition);
     }
 
-    public void travelToPosition(CoordinatePosition pos){
-        targetX = pos.getXCoordinate() - currentX;
-        targetY = pos.getYCoordinate() - currentY;
+    public void travelToObject(CoordinatePosition pos, double angle){
+        Orientation orientation = imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
 
-        telemetry.addData("Target X: ", targetX);
-        telemetry.addData("Target Y: ", targetX);
-        telemetry.update();
+        drive.followTrajectorySync(drive.trajectoryBuilder().
+                splineTo(new Pose2d(pos.getXCoordinate(), pos.getYCoordinate(), angle))
+                .build());
 
-        //TODO: Add drive function using targetX and targetY.
+        while (opModeIsActive() && drive.isBusy()) {
+            drive.update();
+        }
+    }
+
+    public void travelToPosition(double targetX, double targetY, double angle){
+        drive.followTrajectorySync(drive.trajectoryBuilder().
+                splineTo(new Pose2d(targetX, targetY, angle))
+                .build());
+
+        while (opModeIsActive() && drive.isBusy()) {
+            drive.update();
+        }
+    }
+
+    public void travelStraight(double distance){
+        Trajectory trajectory = drive.trajectoryBuilder()
+                .forward(distance)
+                .build();
+
+        drive.followTrajectorySync(trajectory);
+
+        while (opModeIsActive() && drive.isBusy()) {
+            drive.update();
+        }
+    }
+
+    public void travelBackwards(double distance){
+        Trajectory trajectory = drive.trajectoryBuilder()
+                .back(distance)
+                .build();
+
+        drive.followTrajectorySync(trajectory);
+
+        while (opModeIsActive() && drive.isBusy()) {
+            drive.update();
+        }
+    }
+
+    public void strafe(double distance, boolean leftDirection){
+        Trajectory trajectory;
+
+        if (leftDirection == true) {
+            trajectory = drive.trajectoryBuilder()
+                    .strafeLeft(distance)
+                    .build();
+        }
+        else{
+            trajectory = drive.trajectoryBuilder()
+                    .strafeRight(distance)
+                    .build();
+        }
+
+        drive.followTrajectorySync(trajectory);
+
+        while (opModeIsActive() && drive.isBusy()) {
+            drive.update();
+        }
+    }
+
+    public void turn(double angle){
+        drive.turnSync(Math.toRadians(angle));
     }
 
     //Constructor
@@ -542,7 +661,7 @@ public class SkystoneFPS extends LinearOpMode {
         allTrackables.addAll(skystones);
 
         boolean blue = false;
-        int side = 2;
+        int side = getFieldStartPosition();
 
         if (side == 2 || side == 3){
             blue = true;
@@ -672,16 +791,7 @@ public class SkystoneFPS extends LinearOpMode {
 
     public CoordinatePosition determineSkystone(){
         if (xPosition <= 659.6 && xPosition >= 559.6){
-            if (yPosition > -mmFTCFieldWidth/2 && yPosition < -1651.8){
-                return redSkystone1;
-            }
-            else if (yPosition > -1651.8 && yPosition < -1550.2){
-                return redSkystone2;
-            }
-            else if (yPosition > -1550.2 && yPosition < -1448.6){
-                return redSkystone3;
-            }
-            else if (yPosition > -1448.6 && yPosition < -1347.0){
+            if (yPosition > -1448.6 && yPosition < -1347.0){
                 return redSkystone4;
             }
             else if (yPosition > -1347.0 && yPosition < -1245.4){
@@ -698,16 +808,7 @@ public class SkystoneFPS extends LinearOpMode {
             }
         }
         else if(xPosition >= -659.6 && xPosition <= -559.6){
-            if (yPosition > -mmFTCFieldWidth/2 && yPosition < -1651.8){
-                return blueSkystone1;
-            }
-            else if (yPosition > -1651.8 && yPosition < -1550.2){
-                return blueSkystone2;
-            }
-            else if (yPosition > -1550.2 && yPosition < -1448.6){
-                return blueSkystone3;
-            }
-            else if (yPosition > -1448.6 && yPosition < -1347.0){
+            if (yPosition > -1448.6 && yPosition < -1347.0){
                 return blueSkystone4;
             }
             else if (yPosition > -1347.0 && yPosition < -1245.4){
@@ -731,6 +832,94 @@ public class SkystoneFPS extends LinearOpMode {
         }
     }
 
+    public CoordinatePosition findSecondSkystone(){
+        int side = getFieldStartPosition();
 
+        if (side == 2 || side == 3) {
+            if (targetSkystone1 == blueSkystone6) {
+                return blueSkystone3;
+            } else if (targetSkystone1 == blueSkystone5) {
+                return blueSkystone2;
+            } else {
+                return blueSkystone1;
+            }
+        }
+        else{
+            if (targetSkystone1 == redSkystone6) {
+                return redSkystone3;
+            } else if (targetSkystone1 == redSkystone5) {
+                return redSkystone2;
+            } else {
+                return redSkystone1;
+            }
+        }
+    }
 
+    public void redLoadingZone(VuforiaLocalizer.Parameters parameters){
+        findSkystone(parameters);
+
+        targetSkystone1 = determineSkystone();
+
+        //TODO: Turn intake system on.
+
+        travelToObject(targetSkystone1, 0);
+
+        travelBackwards(4);
+
+        //TODO: Turn intake system off.
+
+        turn(-90);
+
+        travelToObject(redFoundation, 0);
+
+        //TODO: Place Skystone on Foundation.
+
+        travelBackwards(4);
+
+        turn(90);
+
+        travelToPosition(mmFTCFieldWidth/4, 0, 90);
+    }
+
+    public void blueLoadingZone(VuforiaLocalizer.Parameters parameters){
+        findSkystone(parameters);
+
+        targetSkystone1 = determineSkystone();
+
+        //TODO: Turn intake system on.
+
+        travelToObject(targetSkystone1, 0);
+
+        travelBackwards(4);
+
+        //TODO: Turn intake system off.
+
+        turn(90);
+
+        travelToObject(blueFoundation, 0);
+
+        //TODO: Place Skystone on Foundation.
+
+        travelBackwards(4);
+
+        turn(-90);
+
+        travelToPosition(-mmFTCFieldWidth/4, 0, 90);
+    }
+
+    public void redBuildingZone (VuforiaLocalizer.Parameters parameters){
+        travelToObject(redFoundation2, -90);
+
+        strafe(47.25, false);
+
+        travelBackwards(mmFoundation2YPosition);
+    }
+
+    public void blueBuildingZone (VuforiaLocalizer.Parameters parameters){
+        travelToObject(blueFoundation2, 90);
+
+        strafe(47.25, true);
+
+        travelBackwards(mmFoundation2YPosition);
+    }
 }
