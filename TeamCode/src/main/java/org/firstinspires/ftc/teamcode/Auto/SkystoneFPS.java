@@ -79,6 +79,8 @@ Skystone Field Positioning System (FPS) using a Webcam and VuMarks.
 @TeleOp(name="Skystone FPS", group ="Concept")
 public class SkystoneFPS extends LinearOpMode {
 
+    double xDiff = 0;
+
     public static final String TAG = "Vuforia Navigation Sample";
 
     SampleMecanumDriveBase drive = new SampleMecanumDriveREVOptimized(hardwareMap);
@@ -856,70 +858,215 @@ public class SkystoneFPS extends LinearOpMode {
     }
 
     public void redLoadingZone(VuforiaLocalizer.Parameters parameters){
-        findSkystone(parameters);
+        //findSkystone(parameters);
 
-        targetSkystone1 = determineSkystone();
+        gyroDrive(0, 1.0, 12, 5.0);
 
-        //TODO: Turn intake system on.
+        gyroTurn(-90, 1.0, 10, 5.0);
 
-        travelToObject(targetSkystone1, 0);
+        while (robot.color.alpha < 0 || robot.color.alpha > 35){
+            gyroDrive(-90, 1.0, 18, 5.0);
+        }
 
-        travelBackwards(4);
+        gyroTurn(90, 1.0, 10, 5.0);
 
-        //TODO: Turn intake system off.
+        gyroDrive(90, -1.0, 4, 5.0);
 
-        turn(-90);
+        strafe(1.0, 6, 5.0, false);
 
-        travelToObject(redFoundation, 0);
+        robot.intakeLeft.setPower(1.0);
+        robot.intakeRight.setPower(1.0);
 
-        //TODO: Place Skystone on Foundation.
+        gyroDrive(90, 1.0, 4, 5.0);
 
-        travelBackwards(4);
+        strafe(1.0, 6.0, 5.0, true);
 
-        turn(90);
+        if (xDiff <= 20){
+            gyroDrive(90, -1.0, 72, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(90, -1.0, 80, 7.0);
+        }
+        else{
+            gyroDrive(90, -1.0, 88, 7.0);
+        }
 
-        travelToPosition(mmFTCFieldWidth/4, 0, 90);
+        //place stone
+
+        if (xDiff <= 20){
+            gyroDrive(90, 1.0, 88, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(90, 1.0, 96, 7.0);
+        }
+        else{
+            gyroDrive(90, 1.0, 104, 7.0);
+        }
+
+        strafe(1.0, 6, 5.0, false);
+
+        robot.intakeLeft.setPower(1.0);
+        robot.intakeRight.setPower(1.0);
+
+        gyroDrive(90, 1.0, 4, 5.0);
+
+        strafe(1.0, 6.0, 5.0, true);
+
+        if (xDiff <= 20){
+            gyroDrive(90, -1.0, 88, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(90, -1.0, 96, 7.0);
+        }
+        else{
+            gyroDrive(90, -1.0, 104, 7.0);
+        }
+
+        //place stone
+
+        gyroDrive(90, 1.0, 48, 5.0);
     }
 
     public void blueLoadingZone(VuforiaLocalizer.Parameters parameters){
-        findSkystone(parameters);
+        gyroDrive(0, 1.0, 12, 5.0);
 
-        targetSkystone1 = determineSkystone();
+        gyroTurn(-90, 1.0, 10, 5.0);
 
-        //TODO: Turn intake system on.
+        while (robot.color.alpha < 0 || robot.color.alpha > 35){
+            gyroDrive(-90, 1.0, 18, 5.0);
+        }
 
-        travelToObject(targetSkystone1, 0);
+        gyroDrive(-90, -1.0, 4, 5.0);
 
-        travelBackwards(4);
+        strafe(1.0, 6, 5.0, false);
 
-        //TODO: Turn intake system off.
+        robot.intakeLeft.setPower(1.0);
+        robot.intakeRight.setPower(1.0);
 
-        turn(90);
+        gyroDrive(-90, 1.0, 4, 5.0);
 
-        travelToObject(blueFoundation, 0);
+        strafe(1.0, 6.0, 5.0, true);
 
-        //TODO: Place Skystone on Foundation.
+        if (xDiff <= 20){
+            gyroDrive(-90, -1.0, 72, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(-90, -1.0, 80, 7.0);
+        }
+        else{
+            gyroDrive(-90, -1.0, 88, 7.0);
+        }
 
-        travelBackwards(4);
+        //place stone
 
-        turn(-90);
+        if (xDiff <= 20){
+            gyroDrive(-90, 1.0, 88, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(-90, 1.0, 96, 7.0);
+        }
+        else{
+            gyroDrive(-90, 1.0, 104, 7.0);
+        }
 
-        travelToPosition(-mmFTCFieldWidth/4, 0, 90);
+        strafe(1.0, 6, 5.0, false);
+
+        robot.intakeLeft.setPower(1.0);
+        robot.intakeRight.setPower(1.0);
+
+        gyroDrive(-90, 1.0, 4, 5.0);
+
+        strafe(1.0, 6.0, 5.0, true);
+
+        if (xDiff <= 20){
+            gyroDrive(-90, -1.0, 88, 7.0);
+        }
+        else if(xDiff <= 28){
+            gyroDrive(-90, -1.0, 96, 7.0);
+        }
+        else{
+            gyroDrive(-90, -1.0, 104, 7.0);
+        }
+
+        //place stone
+
+        gyroDrive(-90, 1.0, 48, 5.0);
     }
 
     public void redBuildingZone (VuforiaLocalizer.Parameters parameters){
-        travelToObject(redFoundation2, -90);
+        gyroDrive(0, 1.0, 30, 5.0);
 
-        strafe(47.25, false);
+        gyroTurn(-90, 1.0, 10, 5.0);
 
-        travelBackwards(mmFoundation2YPosition);
+        //grab foundation
+
+        strafe(1.0, 30, 5.0, true);
+
+        gyroDrive(-90, 1.0, 30, 5.0);
     }
 
     public void blueBuildingZone (VuforiaLocalizer.Parameters parameters){
-        travelToObject(blueFoundation2, 90);
+        gyroDrive(0, 1.0, 30, 5.0);
 
-        strafe(47.25, true);
+        gyroTurn(-90, 1.0, 10, 5.0);
 
-        travelBackwards(mmFoundation2YPosition);
+        //grab foundation
+
+        strafe(1.0, 30, 5.0, false);
+
+        gyroDrive(-90, 1.0, 30, 5.0);
+    }
+
+    public void gyroDrive(){
+        xDiff = Math.abs(wheel1.getCurrentPosition() - rightStart);
+    }
+
+    public void gyroStrafe(double speed, double distance, double timeout, boolean direction) {
+
+        distance = distance * TICKS_PER_INCH;
+
+        double rightStart = bot.wheel2.getCurrentPosition(); // top right
+        double leftStart = bot.wheel1.getCurrentPosition(); // top left
+
+        double startTime = time;
+
+        if (direction == true) {
+            //Strafe left
+            while (isActive() && Math.abs(wheel1.getCurrentPosition() - leftStart) < distance) {
+
+                if (time > startTime + timeout) { // timeout
+                    telemetry.addLine("Drive loop timeout.");
+                    break;
+                }
+
+                wheel1.setPower(speed);
+                wheel2.setPower(-speed);
+                wheel3.setPower(speed);
+                wheel4.setPower(-speed);
+            }
+            wheel1.setPower(0);
+            wheel2.setPower(0);
+            wheel3.setPower(0);
+            wheel4.setPower(0);
+        }
+
+        if (direction == false) {
+            //Strafe right
+            while (isActive() && Math.abs(wheel2.getCurrentPosition() - rightStart) < distance) {
+                if (time > startTime + timeout) { // timeout
+                    telemetry.addLine("Drive loop timeout.");
+                    break;
+                }
+
+                wheel1.setPower(-speed);
+                wheel2.setPower(speed);
+                wheel3.setPower(-speed);
+                wheel4.setPower(speed);
+            }
+            wheel1.setPower(0);
+            wheel2.setPower(0);
+            wheel3.setPower(0);
+            wheel4.setPower(0);
+        }
     }
 }
