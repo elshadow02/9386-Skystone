@@ -162,11 +162,11 @@ public class SkystoneFPS extends LinearOpMode {
          * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
          * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
          */
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+//        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
         // OR...  Do Not Activate the Camera Monitor View, to save power
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = "AQapn2P/////AAABmRxgWZJT7kKXqyyOQcN4AidYCoBPE/BzcDQASgQ+5iM8wvdkBbzR8qPTDddZSHUp0VsvcAKm8KwIWUElQXmamu9q/iTAzYdJ+aFu/b+2Zyf/+9ZbluiqiSPLptgv/ocKQqzY6nCFoV4qzSFGhH45oRThSBuKmWxrAGJHIo1mnrRdSuyuIOf8JIqo9J9bdqApsVZOSEiuglT7YNQE3DEBAsS9xCLLu8lfn/SvpgzaEy+pBOoehvJOCQ6QabYUz2ZiaaB0CrOLkPjP7OnafVAoo+NZ6vOOqfwRfqEwWUT/YYOoTn8zJLD0+tBdqSZkdVn5sT46CxfZFz1NHfd5RvHzRBcPrI3iB6lXtvCuS8csqLL0";
 
@@ -217,7 +217,7 @@ public class SkystoneFPS extends LinearOpMode {
         telemetry.addData("Field Positon", fieldPos);
         telemetry.update();
 
-        sleep (7000);
+        sleep (1500);
 
         if (fieldPos == 1){
             redBuildingZone(parameters);
@@ -860,137 +860,221 @@ public class SkystoneFPS extends LinearOpMode {
     public void redLoadingZone(VuforiaLocalizer.Parameters parameters){
         //findSkystone(parameters);
 
-        gyroDrive(0, 1.0, 12, 5.0);
+        gyroDrive(0, 1.0, 26, 5.0);
 
-        gyroTurn(-90, 1.0, 10, 5.0);
+        gyroTurn(-90, 1.0, 12, 5.0);
 
-        while (robot.color.alpha < 0 || robot.color.alpha > 35){
-            gyroDrive(-90, 1.0, 18, 5.0);
+        double crrt = robot.frontLeft.getCurrentPosition();
+
+        while (robot.color.alpha() < 22 || robot.color.alpha() > 30){
+            gyroDrive(-90, -0.5, 30, 5.0);
         }
 
-        gyroTurn(90, 1.0, 10, 5.0);
+        xDiff = (robot.frontLeft.getCurrentPosition()-crrt)/TICKS_PER_INCH;
 
-        gyroDrive(90, -1.0, 4, 5.0);
+        gyroDrive(-90, 1.0, 4, 5.0);
+
+        gyroTurn(90, 1.0, 12, 5.0);
 
         strafe(1.0, 6, 5.0, false);
+
+        robot.intakeLeftServo.setPosition(1);
+        robot.intakeRightServo.setPosition(1);
 
         robot.intakeLeft.setPower(1.0);
         robot.intakeRight.setPower(1.0);
 
-        gyroDrive(90, 1.0, 4, 5.0);
+        gyroDrive(90, 1.0, 5, 5.0);
 
         strafe(1.0, 6.0, 5.0, true);
 
-        if (xDiff <= 20){
-            gyroDrive(90, -1.0, 72, 7.0);
+        if (xDiff <= 13){
+            gyroDrive(90, -1.0, 76, 7.0);
         }
-        else if(xDiff <= 28){
-            gyroDrive(90, -1.0, 80, 7.0);
-        }
-        else{
-            gyroDrive(90, -1.0, 88, 7.0);
-        }
-
-        //place stone
-
-        if (xDiff <= 20){
-            gyroDrive(90, 1.0, 88, 7.0);
-        }
-        else if(xDiff <= 28){
-            gyroDrive(90, 1.0, 96, 7.0);
+        else if(xDiff <= 21){
+            gyroDrive(90, -1.0, 84, 7.0);
         }
         else{
-            gyroDrive(90, 1.0, 104, 7.0);
+            gyroDrive(90, -1.0, 92, 7.0);
+        }
+
+        if (robot.touch.isPressed()){
+            gyroTurn(179, 1.0, 12, 5.0);
+        }
+        else {
+            gyroTurn(0, 1.0, 12, 5.0);
+        }
+        robot.intakeLeft.setPower(-1.0);
+        robot.intakeRight.setPower(-1.0);
+        robot.intakeLeftServo.setPosition(0.6);
+        robot.intakeRightServo.setPosition(0.6);
+
+        sleep(1500);
+
+        robot.intakeLeft.setPower(0);
+        robot.intakeRight.setPower(0);
+
+        gyroTurn(90, 1.0, 12, 5.0);
+
+        if (xDiff <= 13){
+            gyroDrive(90, 1.0, 92, 7.0);
+        }
+        else if(xDiff <= 21){
+            gyroDrive(90, 1.0, 100, 7.0);
+        }
+        else{
+            gyroDrive(90, 1.0, 108, 7.0);
         }
 
         strafe(1.0, 6, 5.0, false);
 
+        robot.intakeLeftServo.setPosition(1);
+        robot.intakeRightServo.setPosition(1);
+
         robot.intakeLeft.setPower(1.0);
         robot.intakeRight.setPower(1.0);
 
-        gyroDrive(90, 1.0, 4, 5.0);
+        gyroDrive(90, 1.0, 5, 5.0);
 
         strafe(1.0, 6.0, 5.0, true);
 
-        if (xDiff <= 20){
-            gyroDrive(90, -1.0, 88, 7.0);
-        }
-        else if(xDiff <= 28){
+        if (xDiff <= 13){
             gyroDrive(90, -1.0, 96, 7.0);
         }
-        else{
+        else if(xDiff <= 21){
             gyroDrive(90, -1.0, 104, 7.0);
         }
+        else{
+            gyroDrive(90, -1.0, 112, 7.0);
+        }
 
-        //place stone
+        if (robot.touch.isPressed()){
+            gyroTurn(179, 1.0, 12, 5.0);
+        }
+        else {
+            gyroTurn(0, 1.0, 12, 5.0);
+        }
+        robot.intakeLeft.setPower(-1.0);
+        robot.intakeRight.setPower(-1.0);
+        robot.intakeLeftServo.setPosition(0.6);
+        robot.intakeRightServo.setPosition(0.6);
 
-        gyroDrive(90, 1.0, 48, 5.0);
+        sleep(1500);
+
+        robot.intakeLeft.setPower(0);
+        robot.intakeRight.setPower(0);
+
+        gyroTurn(90, 1.0, 12, 5.0);
+
+        gyroDrive(90, 1.0, 50, 5.0);
     }
 
     public void blueLoadingZone(VuforiaLocalizer.Parameters parameters){
-        gyroDrive(0, 1.0, 12, 5.0);
+        gyroDrive(0, 1.0, 26, 5.0);
 
-        gyroTurn(-90, 1.0, 10, 5.0);
+        gyroTurn(-90, 1.0, 12, 5.0);
 
-        while (robot.color.alpha < 0 || robot.color.alpha > 35){
-            gyroDrive(-90, 1.0, 18, 5.0);
+        double crrt = robot.frontLeft.getCurrentPosition();
+
+        while (robot.color.alpha() < 22 || robot.color.alpha() > 30){
+            gyroDrive(-90, 0.5, 30, 5.0);
         }
+
+        xDiff = (robot.frontLeft.getCurrentPosition()-crrt)/TICKS_PER_INCH;
 
         gyroDrive(-90, -1.0, 4, 5.0);
 
-        strafe(1.0, 6, 5.0, false);
+        strafe(1.0, 6, 5.0, true);
+
+        robot.intakeLeftServo.setPosition(1);
+        robot.intakeRightServo.setPosition(1);
 
         robot.intakeLeft.setPower(1.0);
         robot.intakeRight.setPower(1.0);
 
-        gyroDrive(-90, 1.0, 4, 5.0);
+        gyroDrive(-90, 1.0, 5, 5.0);
 
-        strafe(1.0, 6.0, 5.0, true);
+        strafe(1.0, 6.0, 5.0, false);
 
-        if (xDiff <= 20){
-            gyroDrive(-90, -1.0, 72, 7.0);
+        if (xDiff <= 13){
+            gyroDrive(-90, -1.0, 76, 7.0);
         }
-        else if(xDiff <= 28){
-            gyroDrive(-90, -1.0, 80, 7.0);
+        else if(xDiff <= 21){
+            gyroDrive(-90, -1.0, 84, 7.0);
         }
         else{
-            gyroDrive(-90, -1.0, 88, 7.0);
+            gyroDrive(-90, -1.0, 92, 7.0);
         }
 
-        //place stone
-
-        if (xDiff <= 20){
-            gyroDrive(-90, 1.0, 88, 7.0);
+        if (robot.touch.isPressed()){
+            gyroTurn(-179, 1.0, 12, 5.0);
         }
-        else if(xDiff <= 28){
-            gyroDrive(-90, 1.0, 96, 7.0);
+        else {
+            gyroTurn(0, 1.0, 12, 5.0);
+        }
+        robot.intakeLeft.setPower(-1.0);
+        robot.intakeRight.setPower(-1.0);
+        robot.intakeLeftServo.setPosition(0.6);
+        robot.intakeRightServo.setPosition(0.6);
+
+        sleep(1500);
+
+        robot.intakeLeft.setPower(0);
+        robot.intakeRight.setPower(0);
+
+        gyroTurn(-90, 1.0, 12, 5.0);
+
+        if (xDiff <= 13){
+            gyroDrive(-90, 1.0, 92, 7.0);
+        }
+        else if(xDiff <= 21){
+            gyroDrive(-90, 1.0, 100, 7.0);
         }
         else{
-            gyroDrive(-90, 1.0, 104, 7.0);
+            gyroDrive(-90, 1.0, 108, 7.0);
         }
 
-        strafe(1.0, 6, 5.0, false);
+        strafe(1.0, 6, 5.0, true);
+
+        robot.intakeLeftServo.setPosition(1);
+        robot.intakeRightServo.setPosition(1);
 
         robot.intakeLeft.setPower(1.0);
         robot.intakeRight.setPower(1.0);
 
-        gyroDrive(-90, 1.0, 4, 5.0);
+        gyroDrive(-90, 1.0, 5, 5.0);
 
-        strafe(1.0, 6.0, 5.0, true);
+        strafe(1.0, 6.0, 5.0, false);
 
-        if (xDiff <= 20){
-            gyroDrive(-90, -1.0, 88, 7.0);
-        }
-        else if(xDiff <= 28){
+        if (xDiff <= 13){
             gyroDrive(-90, -1.0, 96, 7.0);
         }
-        else{
+        else if(xDiff <= 21){
             gyroDrive(-90, -1.0, 104, 7.0);
         }
+        else{
+            gyroDrive(-90, -1.0, 112, 7.0);
+        }
 
-        //place stone
+        if (robot.touch.isPressed()){
+            gyroTurn(-179, 1.0, 12, 5.0);
+        }
+        else {
+            gyroTurn(0, 1.0, 12, 5.0);
+        }
+        robot.intakeLeft.setPower(-1.0);
+        robot.intakeRight.setPower(-1.0);
+        robot.intakeLeftServo.setPosition(0.6);
+        robot.intakeRightServo.setPosition(0.6);
 
-        gyroDrive(-90, 1.0, 48, 5.0);
+        sleep(1500);
+
+        robot.intakeLeft.setPower(0);
+        robot.intakeRight.setPower(0);
+
+        gyroTurn(90, 1.0, 12, 5.0);
+
+        gyroDrive(90, 1.0, 50, 5.0);
     }
 
     public void redBuildingZone (VuforiaLocalizer.Parameters parameters){
