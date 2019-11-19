@@ -37,6 +37,8 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.qualcomm.robotcore.util.ThreadPool;
 import com.vuforia.Frame;
@@ -141,6 +143,8 @@ public class SkystoneFPS extends LinearOpMode {
     private BNO055IMU imu;
     private ExpansionHubEx hub;
 
+    DcMotor motor = null;
+
     /**
      * This is the webcam we are to use. As with other hardware devices such as motors and
      * servos, this device is identified using the robot configuration tool in the FTC application.
@@ -152,6 +156,8 @@ public class SkystoneFPS extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
+        PIDCoefficients pid = new PIDCoefficients(0.1, 0.1, 0.1);
 
         /*
          * Retrieve the camera we are to use.

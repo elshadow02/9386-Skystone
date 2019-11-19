@@ -38,7 +38,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Auto.CoordinatePosition;
 import org.jetbrains.annotations.NotNull;
+import org.firstinspires.ftc.teamcode.Auto.CoordinatePosition;
 
 import java.util.Arrays;
 import java.util.List;
@@ -83,6 +85,8 @@ public class Robot
 //    public static final double WHEEL_BASE = 16;
     public static final double WHEEL_RADIUS = 2;
     public static final double GEAR_RATIO = 1;
+
+    private CoordinatePosition robotPos = new CoordinatePosition(0, 0);
 
     /* Constructor */
     public Robot(){
@@ -170,8 +174,8 @@ public class Robot
 
     }
 
-    private double motorTicksToWheelPosition (int ticks) {
-        double rotations = ticks / (motor1.getMotorType().getTicksPerRev() * GEAR_RATIO);
+    private double motorTicksToWheelPosition (DcMotor motor, int ticks) {
+        double rotations = ticks / (motor.getMotorType().getTicksPerRev() * GEAR_RATIO);
         return rotations * 2 * Math.PI * WHEEL_RADIUS;
     }
 
@@ -179,10 +183,20 @@ public class Robot
     //@Override
     public List<Double> getWheelPositions () {
         return Arrays.asList(
-                motorTicksToWheelPosition(motor1.getCurrentPosition()),
-                motorTicksToWheelPosition(motor2.getCurrentPosition()),
-                motorTicksToWheelPosition(motor3.getCurrentPosition()),
-                motorTicksToWheelPosition(motor4.getCurrentPosition())
+                motorTicksToWheelPosition(motor1, motor1.getCurrentPosition()),
+                motorTicksToWheelPosition(motor2, motor2.getCurrentPosition()),
+                motorTicksToWheelPosition(motor3, motor3.getCurrentPosition()),
+                motorTicksToWheelPosition(motor4, motor4.getCurrentPosition())
         );
     }
+
+    public void setRobotPos(CoordinatePosition robotPos) {
+        this.robotPos = robotPos;
+    }
+
+    public CoordinatePosition getRobotPos(){
+        return this.robotPos;
+    }
+
+
 }
